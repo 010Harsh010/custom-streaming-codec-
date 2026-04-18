@@ -1,9 +1,13 @@
 import cv2
 import numpy as np
-import pickle
+import struct
 import time
 import os
 import zlib
+
+SEG_MAGIC = b"STR1"
+SEG_VERSION = 1
+COEFF_BYTES_PER_MB = 4 * 64 * 2  # four 8x8 tiles × 64 int16 coeffs
 
 BLOCK_SIZE = 16
 
@@ -66,28 +70,6 @@ def dequantize(b):
 
 
 # -------------------------
-# RLE
-# -------------------------
-def rle_encode(arr):
-    out = []
-    count = 1
-    for i in range(1, len(arr)):
-        if arr[i] == arr[i-1]:
-            count += 1
-        else:
-            out.append((arr[i-1], count))
-            count = 1
-    out.append((arr[-1], count))
-    return out
-
-def rle_decode(arr):
-    out = []
-    for v, c in arr:
-        out.extend([v]*c)
-    return out
-
-
-# -------------------------
 # Motion estimation
 # -------------------------
 def find_best_match(block, blocks2, i, j):
@@ -124,51 +106,37 @@ def draw_flow(frame, flow):
 # Residual Compression (FIXED)
 # -------------------------
 def encode_residual(residual):
-    # keep float, DO NOT cast to uint8
     gray = cv2.cvtColor(residual, cv2.COLOR_BGR2GRAY).astype(np.float32)
-
-    compressed = []
+    tiles = []
 
     for y in range(0, gray.shape[0], 8):
         for x in range(0, gray.shape[1], 8):
             block = gray[y:y+8, x:x+8]
-            if block.shape != (8,8):
+            if block.shape != (8, 8):
                 continue
 
-            # level shift
             block = block - 128
-
             d = dct2(block)
             q = quantize(d)
-            rle = rle_encode(q.flatten())
+            q_int = np.round(q).astype(np.int16)
+            tiles.append(q_int.reshape(64))
 
-            compressed.append(rle)
-
-    return compressed
+    return np.stack(tiles, axis=0)
 
 
-def decode_residual(comp, shape):
+def decode_residual(coeffs, shape):
     h, w = shape
-    res = np.zeros((h,w), dtype=np.float32)
-
-    idx = 0
+    res = np.zeros((h, w), dtype=np.float32)
+    c = np.asarray(coeffs, dtype=np.int16)
+    tile_idx = 0
     for y in range(0, h, 8):
         for x in range(0, w, 8):
-            if idx >= len(comp):
-                break
-
-            arr = rle_decode(comp[idx])
-            idx += 1
-
-            block = np.array(arr).reshape(8,8)
-
+            block = c[tile_idx].reshape(8, 8).astype(np.float32)
+            tile_idx += 1
             d = dequantize(block)
             rec = idct2(d)
-
-            rec = rec + 128   # reverse level shift
-
+            rec = rec + 128
             res[y:y+8, x:x+8] = rec
-
     return res
 
 
@@ -179,10 +147,14 @@ def process_video(path):
     cap = cv2.VideoCapture(path)
 
     ret, first = cap.read()
+    if not ret or first is None:
+        raise RuntimeError(f"could not read first frame from {path}")
     first = pad_frame(first)
 
     h, w, _ = first.shape
     fps = int(cap.get(cv2.CAP_PROP_FPS))
+    if fps <= 0:
+        fps = 30
 
     os.makedirs("segments", exist_ok=True)
 
@@ -198,7 +170,14 @@ def process_video(path):
     encoded = []
     log = []
 
-    idx = 0
+    # Always start stream with an I-frame so each decode chain has an anchor.
+    ok, first_buf = cv2.imencode(".jpg", first, [cv2.IMWRITE_JPEG_QUALITY, 70])
+    if not ok:
+        raise RuntimeError("failed to encode first frame as I-frame")
+    encoded.append({"type": "I", "frame": first_buf.tobytes()})
+    log.append((0, "I", 0.0))
+
+    idx = 1
     threshold = 500
 
     while True:
@@ -274,7 +253,69 @@ def process_video(path):
 
 
 # -------------------------
-# SEGMENTATION
+# Segment blob (compact binary, zlib in .ts file)
+# -------------------------
+def serialize_encoded(frames):
+    parts = [SEG_MAGIC, struct.pack("<B", SEG_VERSION)]
+    for fr in frames:
+        if fr["type"] == "I":
+            jpeg = fr["frame"]
+            parts.append(struct.pack("<BI", 0, len(jpeg)))
+            parts.append(jpeg)
+        else:
+            blocks = fr["blocks"]
+            nr, nc = len(blocks), len(blocks[0])
+            parts.append(struct.pack("<BHH", 1, nr, nc))
+            for i in range(nr):
+                for j in range(nc):
+                    dx, dy, coeff = blocks[i][j]
+                    c = np.asarray(coeff, dtype=np.int16)
+                    if c.size != 256:
+                        raise ValueError(f"expected 256 int16 coeffs per macroblock, got {c.size}")
+                    parts.append(struct.pack("<bb", int(dx), int(dy)))
+                    parts.append(c.tobytes())
+    return b"".join(parts)
+
+
+def deserialize_encoded(blob):
+    if len(blob) < 5 or blob[:4] != SEG_MAGIC:
+        raise ValueError("invalid segment: bad magic")
+    ver = blob[4]
+    if ver != SEG_VERSION:
+        raise ValueError(f"unsupported segment version {ver}")
+    off = 5
+    out = []
+    while off < len(blob):
+        t = blob[off]
+        off += 1
+        if t == 0:
+            n = struct.unpack_from("<I", blob, off)[0]
+            off += 4
+            jpeg = blob[off : off + n]
+            off += n
+            out.append({"type": "I", "frame": jpeg})
+        elif t == 1:
+            nr, nc = struct.unpack_from("<HH", blob, off)
+            off += 4
+            blocks = []
+            for _i in range(nr):
+                row = []
+                for _j in range(nc):
+                    dx, dy = struct.unpack_from("<bb", blob, off)
+                    off += 2
+                    raw = blob[off : off + COEFF_BYTES_PER_MB]
+                    off += COEFF_BYTES_PER_MB
+                    coeff = np.frombuffer(raw, dtype=np.int16).copy().reshape(4, 64)
+                    row.append((dx, dy, coeff))
+                blocks.append(row)
+            out.append({"type": "P", "blocks": blocks})
+        else:
+            raise ValueError(f"unknown frame type byte {t}")
+    return out
+
+
+# -------------------------
+# SEGMENTATION (.ts extension, custom payload)
 # -------------------------
 def segment_video(encoded, log, fps):
     points = [0]
@@ -289,15 +330,20 @@ def segment_video(encoded, log, fps):
         s = points[i]
         e = points[i+1] if i+1 < len(points) else len(encoded)
 
-        data = zlib.compress(pickle.dumps(encoded[s:e]), 9)
+        payload = serialize_encoded(encoded[s:e])
+        data = zlib.compress(payload, 9)
 
-        with open(f"segments/segment_{i}.seg","wb") as f:
+        with open(f"segments/segment_{i}.ts","wb") as f:
             f.write(data)
 
     with open("index.m3u8","w") as f:
         f.write("#EXTM3U\n")
+        fps_d = max(float(fps), 1e-6)
         for i in range(len(points)):
-            f.write(f"#EXTINF:5,\nsegments/segment_{i}.seg\n")
+            s = points[i]
+            e = points[i + 1] if i + 1 < len(points) else len(encoded)
+            dur = (e - s) / fps_d
+            f.write(f"#EXTINF:{dur:.6f},\nsegments/segment_{i}.ts\n")
 
 
 # -------------------------
@@ -305,10 +351,11 @@ def segment_video(encoded, log, fps):
 # -------------------------
 def play():
     with open("index.m3u8") as f:
-        segs = [l.strip() for l in f if l.endswith(".seg")]
+        segs = [l.strip() for l in f if l.strip().endswith(".ts")]
 
+    prev_decoded = None
     for s in segs:
-        data = pickle.loads(zlib.decompress(open(s,"rb").read()))
+        data = deserialize_encoded(zlib.decompress(open(s, "rb").read()))
 
         frames = []
 
@@ -317,9 +364,14 @@ def play():
                 img = np.frombuffer(d["frame"], np.uint8)
                 frame = cv2.imdecode(img, cv2.IMREAD_COLOR)
                 frames.append(frame)
+                prev_decoded = frame
 
             else:
-                prev = frames[-1]
+                prev = frames[-1] if frames else prev_decoded
+                if prev is None:
+                    raise RuntimeError(
+                        "segment starts with P-frame and no reference frame is available"
+                    )
                 b2 = get_blocks(prev)
 
                 new_blocks = []
@@ -343,7 +395,9 @@ def play():
 
                     new_blocks.append(row)
 
-                frames.append(rebuild_frame(new_blocks))
+                rec = rebuild_frame(new_blocks)
+                frames.append(rec)
+                prev_decoded = rec
 
         for f in frames:
             cv2.imshow("Stream", f)

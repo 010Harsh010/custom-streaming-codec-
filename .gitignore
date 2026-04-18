@@ -9,3 +9,8 @@ wheels/
 # Virtual environments
 .venv
 videos
+segments
+index.m3u8
+flow.mp4
+reconstructed.mp4
+out
