@@ -106,6 +106,7 @@ def draw_flow(frame, flow):
 # Residual Compression (FIXED)
 # -------------------------
 def encode_residual(residual):
+    # Encode 16x16 residual as four 8x8 DCT blocks, quantize, and flatten to int16
     gray = cv2.cvtColor(residual, cv2.COLOR_BGR2GRAY).astype(np.float32)
     tiles = []
 
@@ -144,15 +145,25 @@ def decode_residual(coeffs, shape):
 # MAIN PIPELINE
 # -------------------------
 def process_video(path):
+    Info_logs = []
     cap = cv2.VideoCapture(path)
 
     ret, first = cap.read()
     if not ret or first is None:
         raise RuntimeError(f"could not read first frame from {path}")
+    
+    # Add padding for block processing 16*16
     first = pad_frame(first)
 
     h, w, _ = first.shape
+    print(f"Data Size: {h*w*3*cap.get(cv2.CAP_PROP_FRAME_COUNT)/(1024*1024):.2f} MB (padded frames)")
+    Info_logs.append(f"Data Size: {h*w*3*cap.get(cv2.CAP_PROP_FRAME_COUNT)/(1024*1024):.2f} MB (padded frames)")
+    
     fps = int(cap.get(cv2.CAP_PROP_FPS))
+    
+    print(f"FPS: {fps}")
+    Info_logs.append(f"FPS: {fps}")
+
     if fps <= 0:
         fps = 30
 
@@ -163,6 +174,9 @@ def process_video(path):
 
     prev = first
     prev_gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
+    print("Gray Data Size:", h*w*cap.get(cv2.CAP_PROP_FRAME_COUNT) / (1024*1024), "MB")
+    
+    Info_logs.append(f"Gray Data Size: {h*w*cap.get(cv2.CAP_PROP_FRAME_COUNT)/(1024*1024):.2f} MB")
 
     reconstructed_prev = prev.copy()
     recon_out.write(prev)
@@ -170,7 +184,7 @@ def process_video(path):
     encoded = []
     log = []
 
-    # Always start stream with an I-frame so each decode chain has an anchor.
+    # Always start stream with an I-frame.
     ok, first_buf = cv2.imencode(".jpg", first, [cv2.IMWRITE_JPEG_QUALITY, 70])
     if not ok:
         raise RuntimeError("failed to encode first frame as I-frame")
@@ -179,6 +193,10 @@ def process_video(path):
 
     idx = 1
     threshold = 500
+    
+    No_of_I_frames = 1
+    No_of_P_frames = 0
+    
 
     while True:
         ret, frame = cap.read()
@@ -199,6 +217,7 @@ def process_video(path):
             encoded.append({"type":"I", "frame":buf.tobytes()})
             reconstructed = frame.copy()
             ftype = "I"
+            No_of_I_frames += 1
 
         # -------- P FRAME --------
         else:
@@ -237,6 +256,7 @@ def process_video(path):
             encoded.append({"type":"P", "blocks":enc_blocks})
             reconstructed = rebuild_frame(new_blocks)
             ftype = "P"
+            No_of_P_frames += 1
 
         log.append((idx, ftype, idx/fps))
         recon_out.write(reconstructed)
@@ -248,8 +268,14 @@ def process_video(path):
     cap.release()
     flow_out.release()
     recon_out.release()
+    
+    Info_logs.append(f"Total Frames: {idx}")
+    Info_logs.append(f"I-Frames: {No_of_I_frames}")
+    Info_logs.append(f"P-Frames: {No_of_P_frames}")
+    
+    Info_logs.append(f"Total Size: {sum(len(e['frame']) if e['type']=='I' else len(e['blocks'])*BLOCK_SIZE*BLOCK_SIZE*2 for e in encoded)/(1024*1024):.2f} MB")
 
-    return encoded, log, fps
+    return encoded, log, fps, Info_logs
 
 
 # -------------------------
@@ -317,7 +343,7 @@ def deserialize_encoded(blob):
 # -------------------------
 # SEGMENTATION (.ts extension, custom payload)
 # -------------------------
-def segment_video(encoded, log, fps):
+def segment_video(encoded, log, fps, Info_logs):
     points = [0]
     last = 0
 
@@ -333,6 +359,8 @@ def segment_video(encoded, log, fps):
         payload = serialize_encoded(encoded[s:e])
         data = zlib.compress(payload, 9)
 
+        Info_logs.append(f"Segment {i}: Frames {s} to {e-1}, Size: {len(data)/(1024*1024):.2f} MB")
+        
         with open(f"segments/segment_{i}.ts","wb") as f:
             f.write(data)
 
@@ -402,7 +430,11 @@ def play():
         for f in frames:
             cv2.imshow("Stream", f)
             if cv2.waitKey(30) == 27:
+                cv2.destroyAllWindows() 
                 return
+            
+    cv2.destroyAllWindows() 
+    return 
 
 
 # -------------------------
@@ -411,16 +443,20 @@ def play():
 if __name__ == "__main__":
     start = time.time()
 
-    encoded, log, fps = process_video("videos/input.mp4")
+    encoded, log, fps, Info_logs = process_video("videos/input.mp4")
 
     with open("frame_log.txt","w") as f:
         for i,t,ts in log:
             f.write(f"Frame {i}: {t}, Time: {ts:.2f}s\n")
 
-    segment_video(encoded, log, fps)
+    segment_video(encoded, log, fps, Info_logs)
+    
+    with open("info_log.txt","w") as f:
+        for line in Info_logs:
+            f.write(line + "\n")
 
     print("Done Encoding + Segmentation")
 
-    play()
+    # play()
 
     print("Time:", time.time() - start)

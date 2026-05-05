@@ -1,0 +1,21 @@
+Data Size: 1252.65 MB (padded frames)
+FPS: 25
+Gray Data Size: 417.55 MB
+Total Frames: 1859
+I-Frames: 478
+P-Frames: 1381
+Total Size: 24.48 MB
+Segment 0: Frames 0 to 165, Size: 3.99 MB
+Segment 1: Frames 166 to 290, Size: 2.66 MB
+Segment 2: Frames 291 to 415, Size: 3.44 MB
+Segment 3: Frames 416 to 541, Size: 2.93 MB
+Segment 4: Frames 542 to 666, Size: 2.00 MB
+Segment 5: Frames 667 to 810, Size: 2.84 MB
+Segment 6: Frames 811 to 967, Size: 3.92 MB
+Segment 7: Frames 968 to 1097, Size: 2.59 MB
+Segment 8: Frames 1098 to 1241, Size: 3.53 MB
+Segment 9: Frames 1242 to 1410, Size: 3.65 MB
+Segment 10: Frames 1411 to 1536, Size: 4.00 MB
+Segment 11: Frames 1537 to 1661, Size: 4.90 MB
+Segment 12: Frames 1662 to 1809, Size: 4.07 MB
+Segment 13: Frames 1810 to 1858, Size: 1.31 MB

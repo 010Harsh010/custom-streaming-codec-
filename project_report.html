@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Video Compression Project Report</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --paper: #fbfaf7;
+      --surface: #ffffff;
+      --line: #dedbd2;
+      --teal: #0f766e;
+      --teal-soft: #dff5f0;
+      --amber: #b7791f;
+      --amber-soft: #fff0cf;
+      --coral: #c2410c;
+      --coral-soft: #ffe8dd;
+      --graphite: #2f3a45;
+      --shadow: 0 18px 45px rgba(23, 32, 42, 0.11);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.6;
+      letter-spacing: 0;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 54px 0 34px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.11), rgba(183, 121, 31, 0.12)),
+        var(--paper);
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      background: var(--teal);
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 0;
+      font-size: clamp(2.4rem, 5vw, 4.9rem);
+      line-height: 0.98;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin: 22px 0 0;
+      color: #394452;
+      font-size: 1.08rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border: 1px solid rgba(15, 118, 110, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #22303c;
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .student-line {
+      margin-top: 14px;
+      color: #566272;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    main {
+      padding: 34px 0 64px;
+    }
+
+    section {
+      margin: 34px 0;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      break-inside: avoid;
+    }
+
+    section.plain {
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      color: var(--graphite);
+      font-size: 1.62rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      color: #283542;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    .lead {
+      color: #344153;
+      font-size: 1.02rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      min-height: 112px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .metric:nth-child(3n + 1) {
+      border-top: 4px solid var(--teal);
+    }
+
+    .metric:nth-child(3n + 2) {
+      border-top: 4px solid var(--amber);
+    }
+
+    .metric:nth-child(3n + 3) {
+      border-top: 4px solid var(--coral);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .metric .value {
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 1.65rem;
+      line-height: 1.1;
+      font-weight: 850;
+    }
+
+    .metric .note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .callout {
+      margin: 18px 0 0;
+      padding: 18px 20px;
+      border-left: 5px solid var(--teal);
+      border-radius: 6px;
+      background: var(--teal-soft);
+      color: #18352f;
+    }
+
+    .callout.amber {
+      border-left-color: var(--amber);
+      background: var(--amber-soft);
+      color: #46330c;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      position: relative;
+      min-height: 150px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fcfcfb;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      margin-bottom: 12px;
+      border-radius: 50%;
+      background: var(--graphite);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.84rem;
+    }
+
+    ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.94rem;
+    }
+
+    th {
+      background: #f3f1ea;
+      color: #26323e;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .tag.i {
+      background: var(--coral-soft);
+      color: var(--coral);
+    }
+
+    .tag.p {
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0 0;
+      padding: 18px;
+      border-radius: 8px;
+      background: #17202a;
+      color: #edf3f3;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      tab-size: 2;
+      white-space: pre;
+    }
+
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mini-list div {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .mini-list strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #283542;
+    }
+
+    .reference-grid {
+      display: grid;
+      gap: 24px;
+      margin-top: 18px;
+    }
+
+    .reference-set {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .reference-set h3 {
+      margin-top: 0;
+    }
+
+    .image-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    figure {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #101820;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+      background: #101820;
+    }
+
+    figcaption {
+      padding: 10px 12px;
+      background: #fff;
+      color: #3b4652;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    footer {
+      padding: 24px 0 44px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 920px) {
+      .grid,
+      .flow,
+      .split,
+      .image-pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 24px, 1120px);
+      }
+
+      header {
+        padding: 38px 0 24px;
+      }
+
+      section {
+        padding: 22px;
+      }
+
+      .grid,
+      .flow,
+      .split,
+      .image-pair {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        min-width: 600px;
+      }
+    }
+
+    @media print {
+      :root {
+        --shadow: none;
+      }
+
+      body {
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        width: 100%;
+      }
+
+      header {
+        padding-top: 20px;
+      }
+
+      section {
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+
+      pre,
+      .table-wrap {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="page">
+      <div class="kicker">Project Report</div>
+      <h1>Custom Video Compression Pipeline</h1>
+      <p class="subtitle">
+        A Python and OpenCV project that demonstrates how video frames can be analyzed, compressed,
+        stored in small chunks, logged, and reconstructed without depending entirely on black-box media tools.
+      </p>
+      <div class="meta-row" aria-label="project metadata">
+        <span class="pill">Main file: main.py</span>
+        <span class="pill">Input path: videos/input.mp4</span>
+        <span class="pill">Log source: info_log.txt</span>
+        <span class="pill">Frame source: frame_log.txt</span>
+      </div>
+      <div class="student-line">Harsh | Roll No. S20230030382 | UG# MS-Project</div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section>
+      <h2>Project Description</h2>
+      <p class="lead">
+        This project is a learning-focused video compression pipeline. It reads a video, prepares each
+        frame for block processing, separates frames into I-frames and P-frames, compresses residual data,
+        writes compact binary chunks, creates a playlist file, and reconstructs video frames for validation.
+        The main implementation is in <code>main.py</code>, where frame processing, compression, chunk writing,
+        decoding, and logging are kept together for study and experimentation.
+      </p>
+      <p>
+        I built the project because my streaming website already used Cloudinary and Multer for media handling.
+        That approach works well for real application usage, but it hides many internal details. Tools like
+        FFmpeg are also powerful, but using them directly does not show how compression works at frame,
+        block, residual, coefficient, and binary-layout levels. This project was created to understand those
+        internals by building the core ideas manually.
+      </p>
+      <div class="callout">
+        The purpose is not only to compress a file. The purpose is to learn how video compression can be
+        designed from basic building blocks: motion prediction, transform coding, quantization, chunking,
+        metadata logs, and reconstruction.
+      </div>
+    </section>
+
+    <section>
+      <h2>Measured Results From Logs</h2>
+      <p>
+        The following values come from <code>info_log.txt</code>, <code>frame_log.txt</code>, and the generated
+        chunk files. They describe how many frames were processed, how the frame types were distributed, and
+        how much size reduction was achieved against raw padded RGB frame data.
+      </p>
+
+      <div class="grid">
+        <div class="metric">
+          <div class="label">Raw padded data</div>
+          <div class="value">1252.65 MB</div>
+          <div class="note">RGB frame estimate from info_log.txt</div>
+        </div>
+        <div class="metric">
+          <div class="label">Gray data</div>
+          <div class="value">417.55 MB</div>
+          <div class="note">Single-channel frame estimate</div>
+        </div>
+        <div class="metric">
+          <div class="label">Frames</div>
+          <div class="value">1,859</div>
+          <div class="note">25 FPS, about 74.36 seconds</div>
+        </div>
+        <div class="metric">
+          <div class="label">Logged total</div>
+          <div class="value">24.48 MB</div>
+          <div class="note">Encoder summary from info_log.txt</div>
+        </div>
+        <div class="metric">
+          <div class="label">I-frames</div>
+          <div class="value">478</div>
+          <div class="note">25.71% of all frames</div>
+        </div>
+        <div class="metric">
+          <div class="label">P-frames</div>
+          <div class="value">1,381</div>
+          <div class="note">74.29% of all frames</div>
+        </div>
+        <div class="metric">
+          <div class="label">Output chunks</div>
+          <div class="value">14</div>
+          <div class="note">Total chunk size: 45.82 MB</div>
+        </div>
+        <div class="metric">
+          <div class="label">Reduction</div>
+          <div class="value">98.05%</div>
+          <div class="note">Raw padded data to logged total</div>
+        </div>
+      </div>
+
+      <div class="callout amber">
+        The logged total size is an internal encoder summary. The final chunk files total 45.82 MB on disk
+        because the chunk payload stores motion vectors, residual coefficient data, headers, and zlib-compressed
+        binary output. Against raw padded RGB data, the final chunks still reduce size by about 96.16%.
+      </div>
+    </section>
+
+    <section>
+      <h2>Compression Method</h2>
+      <div class="flow">
+        <div class="step">
+          <span class="step-number">1</span>
+          <h3>Frame Preparation</h3>
+          <p>
+            The input frame is padded so both width and height are multiples of 16. This makes every frame
+            split cleanly into 16 x 16 macroblocks.
+          </p>
+        </div>
+        <div class="step">
+          <span class="step-number">2</span>
+          <h3>I-Frame Decision</h3>
+          <p>
+            The first frame is always stored as an I-frame. Later frames become I-frames when the mean squared
+            error against the reconstructed reference is greater than the threshold value of 500.
+          </p>
+        </div>
+        <div class="step">
+          <span class="step-number">3</span>
+          <h3>P-Frame Prediction</h3>
+          <p>
+            If the error is low enough, the frame is stored as a P-frame. Each macroblock searches nearby
+            blocks in the reconstructed reference and saves a small motion vector.
+          </p>
+        </div>
+        <div class="step">
+          <span class="step-number">4</span>
+          <h3>Residual Coding</h3>
+          <p>
+            The difference between the current block and reference block is converted to grayscale, split into
+            four 8 x 8 blocks, transformed with DCT, quantized, and saved as signed 16-bit coefficients.
+          </p>
+        </div>
+      </div>
+
+      <h3>Detailed Compression Flow</h3>
+      <ul>
+        <li><strong>Padding:</strong> frames are expanded to fit the 16 x 16 block grid.</li>
+        <li><strong>Block split:</strong> each padded frame is divided into macroblocks using <code>BLOCK_SIZE = 16</code>.</li>
+        <li><strong>Motion estimation:</strong> each block checks neighboring positions from -1 to +1 in both directions.</li>
+        <li><strong>Residual creation:</strong> the selected reference block is subtracted from the current block.</li>
+        <li><strong>DCT transform:</strong> residual data is converted into frequency coefficients.</li>
+        <li><strong>Quantization:</strong> coefficients are divided by a quantization matrix where each value is 8.</li>
+        <li><strong>Binary serialization:</strong> I-frames and P-frames are written into a custom binary layout using magic bytes <code>STR1</code> and version <code>1</code>.</li>
+        <li><strong>Extra compression:</strong> serialized binary chunks are compressed with <code>zlib.compress(payload, 9)</code>.</li>
+        <li><strong>Reconstruction:</strong> the decoder reads each chunk, rebuilds I-frames directly, and rebuilds P-frames from motion vectors plus decoded residuals.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Techniques Used</h2>
+      <p>
+        The project combines multiple compression ideas instead of depending on one single method. The main
+        techniques are frame prediction, block-based motion search, grayscale residual coding, DCT,
+        quantization, custom binary storage, and zlib compression.
+      </p>
+
+      <h3>Padding And 16 x 16 Macroblocks</h3>
+      <p>
+        Before compression starts, every frame is padded so its height and width are divisible by
+        <code>16</code>. This prevents incomplete edge blocks and allows the whole frame to be divided into
+        equal 16 x 16 macroblocks. These macroblocks are the main units used for motion prediction. A fixed
+        block size also makes decoding easier because the decoder can rebuild the same grid structure.
+      </p>
+
+      <h3>Motion Search And Motion Vectors</h3>
+      <p>
+        For a P-frame, the encoder does not store the full current frame. It tries to predict the current
+        frame from the previously reconstructed frame. For every 16 x 16 macroblock, the function
+        <code>find_best_match</code> searches a small local area around the same block position in the
+        reference frame.
+      </p>
+      <pre><code>for di in range(-1, 2):
+    for dj in range(-1, 2):
+        ni, nj = i + di, j + dj
+        cand = blocks2[ni][nj]
+        err = mse(block, cand)</code></pre>
+      <p>
+        The search range is from <code>-1</code> to <code>+1</code> in both row and column directions. That
+        gives nine possible reference positions: the original position plus its eight neighbors. The block
+        with the lowest mean squared error is selected, and only the small movement value
+        <code>(dx, dy)</code> is stored as the motion vector. This is smaller than storing the full block.
+      </p>
+
+      <h3>Predicted Frame And Residual Error</h3>
+      <p>
+        After the best reference block is found, the predicted block is taken from the previous reconstructed
+        frame. The encoder then subtracts that reference block from the current block. This difference is
+        called the residual error.
+      </p>
+      <pre><code>ref = b2[i + dx][j + dy]
+residual = b1[i][j].astype(np.float32) - ref.astype(np.float32)</code></pre>
+      <p>
+        If the prediction is good, the residual contains much less information than the original block. During
+        decoding, the frame is reconstructed by adding the decoded residual back to the predicted reference
+        block. This is the reason P-frames can be smaller than I-frames.
+      </p>
+
+      <h3>Grayscale Residual Coding</h3>
+      <p>
+        The residual is converted from color to grayscale before DCT compression. This reduces the amount of
+        residual data because the encoder stores one channel of residual coefficients instead of separate
+        coefficients for blue, green, and red channels.
+      </p>
+      <pre><code>gray = cv2.cvtColor(residual, cv2.COLOR_BGR2GRAY).astype(np.float32)</code></pre>
+      <p>
+        The same decoded grayscale residual is applied back to all three color channels during reconstruction.
+        This is a deliberate simplification for learning. It reduces stored data and makes the algorithm easier
+        to understand, but it can lose some color-specific error detail compared with storing separate residuals
+        for each color channel. The log also records grayscale data size separately: <code>417.55 MB</code>,
+        compared with <code>1252.65 MB</code> for raw padded RGB data.
+      </p>
+
+      <h3>8 x 8 DCT Transform</h3>
+      <p>
+        Each 16 x 16 residual block is split into four 8 x 8 blocks. The DCT, or Discrete Cosine Transform,
+        converts pixel error values into frequency coefficients. In simple terms, it changes the data from
+        raw spatial differences into values that describe smooth areas, edges, and detail frequencies.
+      </p>
+      <p>
+        This is useful because most natural video blocks contain more low-frequency information than
+        high-frequency information. After DCT, many coefficients become small, which makes them easier to
+        reduce through quantization and later binary compression.
+      </p>
+
+      <h3>Quantization</h3>
+      <p>
+        After DCT, each coefficient is divided by a quantization matrix. In this project, the matrix uses
+        the value <code>8</code> for every position.
+      </p>
+      <pre><code>Q = np.ones((8, 8)) * 8
+
+def quantize(b):
+    return np.round(b / Q)</code></pre>
+      <p>
+        Quantization is the lossy part of the compression. It reduces precision so coefficients take fewer
+        useful values. Smaller coefficient values are easier to store, and tiny visual differences are removed.
+        During decoding, the values are multiplied by the same matrix through dequantization before inverse DCT.
+      </p>
+
+      <h3>Binary Format</h3>
+      <p>
+        The encoded data is stored in a custom binary format instead of plain text. This keeps the output more
+        compact. The binary stream starts with magic bytes <code>STR1</code> and a version number. Then each
+        frame is written with a small type marker.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Stored Item</th>
+              <th>Binary Content</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>I-frame</td>
+              <td>Frame type byte, JPEG byte length, JPEG bytes</td>
+              <td>Stores a complete reference frame for decoding and recovery.</td>
+            </tr>
+            <tr>
+              <td>P-frame</td>
+              <td>Frame type byte, block rows, block columns, motion vectors, DCT coefficients</td>
+              <td>Stores only prediction information and residual data.</td>
+            </tr>
+            <tr>
+              <td>Macroblock</td>
+              <td><code>dx</code>, <code>dy</code>, and four 8 x 8 groups of signed 16-bit coefficients</td>
+              <td>Represents one predicted 16 x 16 block compactly.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>zlib Compression</h3>
+      <p>
+        After the custom binary payload is created, the project applies <code>zlib.compress(payload, 9)</code>.
+        This is a second compression stage. DCT and quantization reduce the video information first, binary
+        serialization packs it into a compact structure, and zlib then removes repeated byte patterns from
+        that binary payload.
+      </p>
+
+      <h3>Why I-Frames Store The Original Frame</h3>
+      <p>
+        I-frames are stored as complete original frames because predictive frames need a reliable reference.
+        A P-frame depends on a previous reconstructed frame. If every frame were predictive, decoding could not
+        start cleanly, and one error could continue spreading through many later frames.
+      </p>
+      <p>
+        Keeping I-frames as complete JPEG images gives the decoder reset points. The first frame is always an
+        I-frame, and later frames become I-frames when the color-frame mean squared error is too high. This
+        means the encoder switches back to a full frame when prediction is no longer accurate enough.
+      </p>
+
+      <h3>5-Second Segments And I-Frame Boundaries</h3>
+      <p>
+        The chunking logic targets about 5 seconds per segment. It does not cut at a random frame. It waits
+        until at least 5 seconds have passed and the current frame is an I-frame. This precaution keeps the
+        first frame of each new segment as an I-frame, so the decoder has a complete frame available at the
+        segment boundary.
+      </p>
+      <pre><code>if ts - last >= 5 and t == "I":
+    points.append(i)
+    last = ts</code></pre>
+      <p>
+        Because the boundary waits for an I-frame, some segments are slightly longer than 5 seconds. For
+        example, the logs show segment durations such as <code>6.64 s</code>, <code>6.28 s</code>, and
+        <code>6.76 s</code>. This is intentional because decoding reliability is more important than cutting
+        exactly at five seconds.
+      </p>
+    </section>
+
+    <section>
+      <h2>Core Code Overview</h2>
+      <p>
+        The code in <code>main.py</code> is organized into small functions for padding, block handling,
+        motion estimation, residual compression, serialization, chunk creation, and decoding.
+      </p>
+
+      <div class="split">
+        <div>
+          <h3>Important Constants</h3>
+          <pre><code>SEG_MAGIC = b"STR1"
+SEG_VERSION = 1
+COEFF_BYTES_PER_MB = 4 * 64 * 2
+BLOCK_SIZE = 16
+Q = np.ones((8,8)) * 8
+threshold = 500</code></pre>
+        </div>
+        <div class="mini-list">
+          <div>
+            <strong><code>BLOCK_SIZE = 16</code></strong>
+            Creates a fixed 16 x 16 macroblock grid for motion prediction.
+          </div>
+          <div>
+            <strong><code>Q = 8</code></strong>
+            Controls quantization strength for DCT coefficients.
+          </div>
+          <div>
+            <strong><code>threshold = 500</code></strong>
+            Decides whether a frame is stored as an I-frame or P-frame.
+          </div>
+        </div>
+      </div>
+
+      <h3>Residual Encoder</h3>
+      <pre><code>def encode_residual(residual):
+    gray = cv2.cvtColor(residual, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    tiles = []
+
+    for y in range(0, gray.shape[0], 8):
+        for x in range(0, gray.shape[1], 8):
+            block = gray[y:y+8, x:x+8]
+            block = block - 128
+            d = dct2(block)
+            q = quantize(d)
+            q_int = np.round(q).astype(np.int16)
+            tiles.append(q_int.reshape(64))
+
+    return np.stack(tiles, axis=0)</code></pre>
+
+      <h3>P-Frame Block Prediction</h3>
+      <pre><code>for i in range(len(b1)):
+    for j in range(len(b1[0])):
+        dx, dy = find_best_match(b1[i][j], b2, i, j)
+        ref = b2[i+dx][j+dy]
+        residual = b1[i][j].astype(np.float32) - ref.astype(np.float32)
+        comp = encode_residual(residual)
+        rec_res = decode_residual(comp, ref.shape[:2])</code></pre>
+
+      <h3>Chunk Compression</h3>
+      <pre><code>payload = serialize_encoded(encoded[s:e])
+data = zlib.compress(payload, 9)
+
+with open(f"segments/segment_{i}.ts", "wb") as f:
+    f.write(data)</code></pre>
+    </section>
+
+    <section>
+      <h2>Frame Type Analysis</h2>
+      <p>
+        The frame log records every frame number, frame type, and timestamp. This shows that most frames
+        were compressed as P-frames, which means the project reused previous reconstructed frames instead of
+        storing every frame independently.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Frame Type</th>
+              <th>Count</th>
+              <th>Share</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag i">I</span></td>
+              <td>478</td>
+              <td>25.71%</td>
+              <td>Stored as JPEG images when a full reference frame is needed.</td>
+            </tr>
+            <tr>
+              <td><span class="tag p">P</span></td>
+              <td>1,381</td>
+              <td>74.29%</td>
+              <td>Stored using motion vectors and residual coefficients.</td>
+            </tr>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td><strong>1,859</strong></td>
+              <td><strong>100%</strong></td>
+              <td>Processed at 25 FPS for an approximate duration of 74.36 seconds.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Chunk Log Details</h2>
+      <p>
+        The project writes compressed binary chunks and lists them in <code>index.m3u8</code>. Each chunk starts
+        at an I-frame when possible, so decoding has a reliable reference frame at chunk boundaries.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Chunk</th>
+              <th>Frame Range</th>
+              <th>Frame Count</th>
+              <th>Duration</th>
+              <th>Logged Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0 to 165</td><td>166</td><td>6.64 s</td><td>3.99 MB</td></tr>
+            <tr><td>1</td><td>166 to 290</td><td>125</td><td>5.00 s</td><td>2.66 MB</td></tr>
+            <tr><td>2</td><td>291 to 415</td><td>125</td><td>5.00 s</td><td>3.44 MB</td></tr>
+            <tr><td>3</td><td>416 to 541</td><td>126</td><td>5.04 s</td><td>2.93 MB</td></tr>
+            <tr><td>4</td><td>542 to 666</td><td>125</td><td>5.00 s</td><td>2.00 MB</td></tr>
+            <tr><td>5</td><td>667 to 810</td><td>144</td><td>5.76 s</td><td>2.84 MB</td></tr>
+            <tr><td>6</td><td>811 to 967</td><td>157</td><td>6.28 s</td><td>3.92 MB</td></tr>
+            <tr><td>7</td><td>968 to 1097</td><td>130</td><td>5.20 s</td><td>2.59 MB</td></tr>
+            <tr><td>8</td><td>1098 to 1241</td><td>144</td><td>5.76 s</td><td>3.53 MB</td></tr>
+            <tr><td>9</td><td>1242 to 1410</td><td>169</td><td>6.76 s</td><td>3.65 MB</td></tr>
+            <tr><td>10</td><td>1411 to 1536</td><td>126</td><td>5.04 s</td><td>4.00 MB</td></tr>
+            <tr><td>11</td><td>1537 to 1661</td><td>125</td><td>5.00 s</td><td>4.90 MB</td></tr>
+            <tr><td>12</td><td>1662 to 1809</td><td>148</td><td>5.92 s</td><td>4.07 MB</td></tr>
+            <tr><td>13</td><td>1810 to 1858</td><td>49</td><td>1.96 s</td><td>1.31 MB</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Why Segmentation Matters</h2>
+      <p>
+        Segmentation means the video is divided into smaller time-based chunks instead of being handled as one
+        large file. In this project, the target chunk length is about 5 seconds. This design is useful because
+        a player can begin work with the first chunk while the remaining chunks are still waiting to be loaded
+        or processed. The user does not need to wait for the full video file before playback can begin.
+      </p>
+      <p>
+        Smaller chunks improve the user experience in several ways. Startup can be faster because the first
+        playable unit is small. Seeking is cleaner because the player can jump near the requested time and load
+        only the chunk around that point. If one chunk fails, the application can retry only that chunk instead
+        of repeating the whole video transfer. It also allows progress and buffering to feel more responsive,
+        because the application works with many manageable units instead of one large binary.
+      </p>
+      <p>
+        Segmentation also improves efficiency. Memory use is lower because the application can decode or cache
+        a small chunk at a time. Network usage can be more practical because only the needed time range has to
+        be loaded. It also creates a path for future improvements such as quality switching, preview loading,
+        partial downloads, and better seeking behavior.
+      </p>
+
+      <h3>Why About 5 Seconds</h3>
+      <p>
+        A 5-second target is a practical balance. Very tiny chunks would create too many files and too much
+        metadata overhead. Very large chunks would slow startup and seeking. A 5-second chunk is short enough
+        for quick buffering and long enough to keep the number of chunks reasonable. The project waits for an
+        I-frame before starting a new chunk, so some chunks are slightly longer than 5 seconds, but each new
+        chunk has a strong decoding starting point.
+      </p>
+
+      <h3>How We Can Use It</h3>
+      <p>
+        The generated <code>index.m3u8</code> file works like a map. It stores the duration of each chunk and
+        the path to the matching compressed file. A web video feature can read that playlist, load the first
+        chunk for quick playback, continue loading later chunks as the user watches, and jump to the right
+        chunk when the user seeks to another timestamp.
+      </p>
+      <ul>
+        <li><strong>Fast start:</strong> load chunk 0 first and begin playback from its I-frame.</li>
+        <li><strong>Smooth buffering:</strong> load the next chunk before the current one finishes.</li>
+        <li><strong>Seeking:</strong> calculate the target time, find the nearest chunk in <code>index.m3u8</code>, and decode from that chunk's first I-frame.</li>
+        <li><strong>Retry handling:</strong> if a chunk has a loading problem, retry that chunk only.</li>
+        <li><strong>Future quality modes:</strong> keep multiple chunk sets at different quality levels and choose the right one based on bandwidth.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Visual Frame References</h2>
+      <p>
+        The report also includes reference images from the original and reconstructed outputs. These images
+        make the compression result easier to understand because the reader can compare the source frame with
+        the frame rebuilt by the custom decoder at the same timestamp.
+      </p>
+      <p>
+        The 10-second and 22-second samples are useful checkpoints. They show how the predicted frame,
+        grayscale residual, DCT coefficients, quantization, binary storage, and zlib-compressed chunks still
+        allow the project to reconstruct a recognizable frame after decoding.
+      </p>
+
+      <div class="reference-grid">
+        <div class="reference-set">
+          <h3>Frame Reference At 10 Seconds</h3>
+          <p>
+            This pair compares the original frame at 10s with the reconstructed frame generated after decoding.
+          </p>
+          <div class="image-pair">
+            <figure>
+              <img src="img/orignal/orignal_10s.png" alt="Original frame at 10 seconds" />
+              <figcaption>Original frame, 10s</figcaption>
+            </figure>
+            <figure>
+              <img src="img/reconstructed/rec_10s.png" alt="Reconstructed frame at 10 seconds" />
+              <figcaption>Reconstructed frame, 10s</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="reference-set">
+          <h3>Frame Reference At 22 Seconds</h3>
+          <p>
+            This pair compares the original frame at 22s with the reconstructed frame generated after decoding.
+          </p>
+          <div class="image-pair">
+            <figure>
+              <img src="img/orignal/orignal_22s.png" alt="Original frame at 22 seconds" />
+              <figcaption>Original frame, 22s</figcaption>
+            </figure>
+            <figure>
+              <img src="img/reconstructed/rec_22s.png" alt="Reconstructed frame at 22 seconds" />
+              <figcaption>Reconstructed frame, 22s</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Generated Files</h2>
+      <p>
+        The project creates files that make debugging and validation easier. The logs are especially important
+        because they show the compression decisions and measured results of the run.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Purpose</th>
+              <th>File Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>info_log.txt</code></td>
+              <td>Summary metrics: data size, FPS, frame counts, encoded size, and chunk sizes.</td>
+              <td>793 bytes</td>
+            </tr>
+            <tr>
+              <td><code>frame_log.txt</code></td>
+              <td>Per-frame record with frame number, frame type, and timestamp.</td>
+              <td>52,551 bytes</td>
+            </tr>
+            <tr>
+              <td><code>index.m3u8</code></td>
+              <td>Playlist-style chunk index containing durations and chunk paths.</td>
+              <td>601 bytes</td>
+            </tr>
+            <tr>
+              <td><code>segments/segment_0.ts</code> to <code>segments/segment_13.ts</code></td>
+              <td>Compressed binary chunks produced by serialization and zlib compression.</td>
+              <td>45.82 MB total</td>
+            </tr>
+            <tr>
+              <td><code>flow.mp4</code></td>
+              <td>Motion visualization output created from optical flow.</td>
+              <td>45.18 MB</td>
+            </tr>
+            <tr>
+              <td><code>reconstructed.mp4</code></td>
+              <td>Rebuilt video output used to verify that decoding can reconstruct frames.</td>
+              <td>14.64 MB</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Learning Outcomes</h2>
+      <p>
+        This project shows the internal ideas behind video compression in a practical way. It demonstrates
+        why modern video compression does not store every frame as a complete image, how motion prediction
+        reduces repeated visual information, and how DCT plus quantization reduce residual data.
+      </p>
+      <ul>
+        <li>Learned how I-frames and P-frames work together.</li>
+        <li>Built a block-based motion estimation method using neighboring macroblocks.</li>
+        <li>Implemented residual compression using DCT, quantization, and inverse reconstruction.</li>
+        <li>Created a custom binary format using frame type bytes, dimensions, motion vectors, and coefficient payloads.</li>
+        <li>Used logs to measure frame counts, size reduction, chunk sizes, and processing behavior.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Conclusion</h2>
+      <p>
+        The project successfully converts raw video frames into a custom compressed representation and records
+        the complete process in logs. From the logged raw padded size of 1252.65 MB to the internal encoded
+        summary of 24.48 MB, the pipeline shows about a 51.17:1 size ratio. The produced chunk files total
+        45.82 MB, which is still about a 26.08:1 ratio against raw padded RGB data.
+      </p>
+      <p>
+        Most importantly, the project explains the internal workflow behind compression rather than hiding it
+        behind external tools. That makes it useful as both a working prototype and a learning project for
+        video compression concepts.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="page">
+      Prepared from <code>main.py</code>, <code>info_log.txt</code>, <code>frame_log.txt</code>, generated chunks,
+      and reconstructed outputs.
+    </div>
+  </footer>
+</body>
+</html>
