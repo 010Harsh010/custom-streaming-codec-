@@ -138,7 +138,6 @@
       border-radius: 8px;
       background: var(--surface);
       box-shadow: var(--shadow);
-      break-inside: avoid;
     }
 
     section.plain {
@@ -478,17 +477,49 @@
         width: 100%;
       }
 
+      main {
+        padding: 18px 0 28px;
+      }
+
       header {
-        padding-top: 20px;
+        padding: 20px 0 18px;
       }
 
       section {
+        margin: 16px 0;
+        padding: 18px;
         box-shadow: none;
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      h2,
+      h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      .metric,
+      .step,
+      .callout,
+      .mini-list div,
+      figure {
+        break-inside: avoid;
         page-break-inside: avoid;
       }
 
-      pre,
-      .table-wrap {
+      .table-wrap,
+      pre {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        break-inside: avoid;
         page-break-inside: avoid;
       }
     }
@@ -1137,12 +1168,5 @@ with open(f"segments/segment_{i}.ts", "wb") as f:
       </p>
     </section>
   </main>
-
-  <footer>
-    <div class="page">
-      Prepared from <code>main.py</code>, <code>info_log.txt</code>, <code>frame_log.txt</code>, generated chunks,
-      and reconstructed outputs.
-    </div>
-  </footer>
 </body>
 </html>
